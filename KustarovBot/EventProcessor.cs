@@ -15,7 +15,6 @@ namespace KustarovBot
     {
         private readonly VkApi _vk;
         private readonly ulong _ts;
-
         private ulong? _pts;
 
         public event Action<Message, User> OnNewMessage;
