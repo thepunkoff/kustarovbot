@@ -17,7 +17,7 @@ namespace KustarovBot
             var vkApi = new VkApi();
             await vkApi.AuthorizeAsync(new ApiAuthParams()
             {
-                AccessToken = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "token.txt")),
+                AccessToken = File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "token.txt")),
                 Settings = Settings.All | Settings.Offline,
             });
 
