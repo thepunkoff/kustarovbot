@@ -14,7 +14,7 @@ namespace KustarovBot
     public class EventProcessor
     {
         private readonly VkApi _vk;
-        private readonly CancellationTokenSource _cts = new();
+        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
         private ulong _timeStamp;
         private ulong? _pts;
@@ -39,7 +39,7 @@ namespace KustarovBot
             {
                 while (!token.IsCancellationRequested)
                 {
-                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new()
+                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new MessagesGetLongPollHistoryParams()
                     {
                         Ts = _timeStamp,
                         Pts = _pts,
