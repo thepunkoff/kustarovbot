@@ -33,7 +33,7 @@ namespace KustarovBot
                         await vkApi.Messages.SendAsync(new()
                         {
                             PeerId = user.Id,
-                            Message = "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание.",
+                            Message = "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!",
                             RandomId = rng.Next(),
                         });
                     }
