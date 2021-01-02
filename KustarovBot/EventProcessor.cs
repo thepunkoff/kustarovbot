@@ -14,34 +14,28 @@ namespace KustarovBot
     public class EventProcessor
     {
         private readonly VkApi _vk;
-        private readonly CancellationTokenSource _cts = new CancellationTokenSource();
+        private readonly ulong _ts;
 
-        private ulong _timeStamp;
         private ulong? _pts;
 
         public event Action<Message, User> OnNewMessage;
         public EventProcessor(VkApi api)
         {
             _vk = api;
-        }
-
-        public void StartProcessingEvents()
-        {
             var longPoolServerResponse = _vk.Messages.GetLongPollServer(needPts: true);
-            _timeStamp = Convert.ToUInt64(longPoolServerResponse.Ts);
+            _ts = Convert.ToUInt64(longPoolServerResponse.Ts);
             _pts = longPoolServerResponse.Pts;
-            var handlingWorker = Task.Run(() => LongPollWorker(_cts.Token), _cts.Token);
         }
 
-        public async Task LongPollWorker(CancellationToken token)
+        public async Task ProcessEvents()
         {
             try
             {
-                while (!token.IsCancellationRequested)
+                while (true)
                 {
-                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new MessagesGetLongPollHistoryParams()
+                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new()
                     {
-                        Ts = _timeStamp,
+                        Ts = _ts,
                         Pts = _pts,
                         Fields = UsersFields.Domain,
                     });
@@ -63,12 +57,10 @@ namespace KustarovBot
                         }
                     }
                 }
-
-                Console.WriteLine($"{nameof(LongPollWorker)} cancelled");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{nameof(LongPollWorker)} crashed:\n{ex}");
+                Console.WriteLine($"{nameof(ProcessEvents)} crashed:\n{ex}");
             }
         }
     }

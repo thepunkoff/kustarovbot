@@ -13,12 +13,14 @@ namespace KustarovBot
     {
         static async Task Main()
         {
+            Console.WriteLine("KustarovBot v 0.0.1");
+
             var rng = new Random();
             var vkApi = new VkApi();
             await vkApi.AuthorizeAsync(new ApiAuthParams()
             {
                 AccessToken = File.ReadAllText(Path.Combine(Environment.CurrentDirectory, "token.txt")),
-                Settings = Settings.All | Settings.Offline,
+                Settings = Settings.Messages | Settings.Offline,
             });
 
             var processor = new EventProcessor(vkApi);
@@ -30,10 +32,10 @@ namespace KustarovBot
                 {
                     try
                     {
-                        await vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+                        await vkApi.Messages.SendAsync(new()
                         {
                             PeerId = user.Id,
-                            Message = "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!!",
+                            Message = "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание.",
                             RandomId = rng.Next(),
                         });
                     }
@@ -45,9 +47,9 @@ namespace KustarovBot
                 
                 messageCounter.Increment(user);
             };
-            processor.StartProcessingEvents();
+            await processor.ProcessEvents();
 
-            Console.ReadLine();
+            Console.WriteLine("Exiting with OK.");
         }
     }
 }
