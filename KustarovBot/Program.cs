@@ -30,7 +30,7 @@ namespace KustarovBot
                 {
                     try
                     {
-                        await vkApi.Messages.SendAsync(new()
+                        await vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
                         {
                             PeerId = user.Id,
                             Message = "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!",
