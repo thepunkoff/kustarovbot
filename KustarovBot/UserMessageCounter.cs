@@ -5,7 +5,7 @@ namespace KustarovBot
 {
     public sealed class UserMessageCounter
     {
-        private readonly Dictionary<long, int> _counters = new Dictionary<long, int>();
+        private readonly Dictionary<long, int> _counters = new();
 
         public void Increment(User user)
         {
@@ -17,10 +17,9 @@ namespace KustarovBot
 
         public int GetCount(User user)
         {
-            if (!_counters.ContainsKey(user.Id))
-                return 0;
-            
-            return _counters[user.Id];
+            return _counters.ContainsKey(user.Id)
+                ? _counters[user.Id]
+                : 0;
         }
     }
 }

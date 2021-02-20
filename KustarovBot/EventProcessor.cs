@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -18,6 +19,7 @@ namespace KustarovBot
         private ulong? _pts;
 
         public event Action<Message, User> OnNewMessage;
+        
         public EventProcessor(VkApi api)
         {
             _vk = api;
@@ -32,7 +34,7 @@ namespace KustarovBot
             {
                 while (true)
                 {
-                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new()
+                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new MessagesGetLongPollHistoryParams()
                     {
                         Ts = _ts,
                         Pts = _pts,
@@ -41,16 +43,15 @@ namespace KustarovBot
 
                     _pts = longPollResponse.NewPts;
 
-                    for (int i = 0; i <  longPollResponse.History.Count; i++)
+                    foreach (var history in longPollResponse.History)
                     {
-                        var history = longPollResponse.History[i];
                         var eventCode = history[0];
-
                         switch (eventCode)
                         {
                             case 4:
-                                var message = longPollResponse.Messages.Where(x => x.Id == history[1]).SingleOrDefault();
-                                var user = longPollResponse.Profiles.Where(x => x.Id == message.FromId).SingleOrDefault();
+                                var history1 = history;
+                                var message = longPollResponse.Messages.SingleOrDefault(x => x.Id == history1[1]);
+                                var user = longPollResponse.Profiles.SingleOrDefault(x => x.Id == message.FromId);
                                 OnNewMessage?.Invoke(message, user);
                                 break;
                         }
