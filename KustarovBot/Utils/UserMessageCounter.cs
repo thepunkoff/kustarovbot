@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using VkNet.Model;
 
-namespace KustarovBot
+namespace KustarovBot.Utils
 {
     public sealed class UserMessageCounter
     {

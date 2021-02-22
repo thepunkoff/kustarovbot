@@ -1,0 +1,9 @@
+﻿Id: "iambusy"
+Text: "Что сделать?"
+Rows:
+  - Buttons:
+      - Text: "Поменять текст ответа"
+        Command: "/menu iambusy_changeText"
+  - Buttons:
+      - Text: "Поменять расписание"
+        Command: "/menu iambusy_changeSchedule"

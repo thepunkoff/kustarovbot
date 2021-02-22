@@ -4,97 +4,79 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
+using KustarovBot.Http;
+using KustarovBot.MessageProcessing;
 using VkNet;
 using VkNet.Enums.Filters;
-using VkNet.Exception;
 using VkNet.Model;
 
 namespace KustarovBot
 {
-    internal sealed class Program
+    public static class Program
     {
-        private static readonly Random _rng = new();
-        private static readonly VkApi _vkApi = new();
-        private static readonly UserMessageCounter _messageCounter = new();
+        private static readonly VkApi VkApi = new();
+        private static readonly List<IModule> MessageProcessors = new();
         private static EventProcessor _eventProcessor;
+        private static readonly HttpServer HttpServer = new(8080);
 
-        static async Task Main()
+        private static async Task Main()
+        {
+            try
+            {
+                await Authorize();
+                AddMessageProcessors();
+                HttpServer.Start();
+
+                _eventProcessor.OnNewMessage += async (message, user) =>
+                {
+                    try
+                    {
+                        foreach (var processor in MessageProcessors)
+                            await processor.ProcessMessage(message, user);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"unexpected error occured while processing message:\n{ex}");
+                    }
+                };
+                _eventProcessor.StartProcessingEvents();
+
+                Thread.Sleep(Timeout.Infinite);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"unhandled exception:\n{ex}");
+            }
+            finally
+            {
+                await _eventProcessor.DisposeAsync();
+                await HttpServer.DisposeAsync();
+                VkApi.Dispose();
+            }
+        }
+
+        private static async Task Authorize()
         {
             Console.WriteLine($"Initializing KustarovBot v {Assembly.GetExecutingAssembly().GetName().Version}");
-            await _vkApi.AuthorizeAsync(new ApiAuthParams
+            await VkApi.AuthorizeAsync(new ApiAuthParams
             {
                 AccessToken = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "token.txt")),
                 Settings = Settings.All | Settings.Offline,
             });
-            
-            _eventProcessor = new EventProcessor(_vkApi);
 
-            var authUserId = _vkApi.UserId ?? throw new Exception("VkApi.UserId was null. Should authorize using VkApi.Authorize");
-            var res = await _vkApi.Users.GetAsync(Array.Empty<long>(), ProfileFields.Domain);
+            _eventProcessor = new EventProcessor(VkApi);
+
+            var res = await VkApi.Users.GetAsync(Array.Empty<long>(), ProfileFields.Domain);
             var self = res.Single();
             Console.WriteLine($"Authorized as {self.FirstName} {self.LastName} ({self.Domain})");
-
-            _eventProcessor.OnNewMessage += async (message, user) =>
-            {
-                if (_messageCounter.GetCount(user) % 10 == 0)
-                {
-                    try
-                    {
-                        await _vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
-                        {
-                            PeerId = user.Id,
-                            Message = "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!",
-                            RandomId = _rng.Next(),
-                        });
-                    }
-                    catch (CaptchaNeededException)
-                    {
-                        Console.WriteLine("Captcha needed. Skipping.");
-                    }
-                }
-                
-                _messageCounter.Increment(user);
-            };
-
-            Task.Run(() => ExposeHttp());
-            await _eventProcessor.ProcessEvents();
-
-            Console.WriteLine("Exiting with OK.");
         }
 
-        private static HttpListener _httpListener;
-        
-        private static async Task ExposeHttp()
+        private static void AddMessageProcessors()
         {
-            var listener = new HttpListener();
-            listener.Prefixes.Add("http://*:8080/");
-            listener.Start();
-            Console.WriteLine("Started listening http requests on port 8080");
-
-            while (true)
-            {
-                var context = await listener.GetContextAsync();
-                var request = context.Request;
-                
-                Console.WriteLine($"got request from {request.RemoteEndPoint}");
-                
-                if (request.HttpMethod != "GET")
-                {
-                    Console.WriteLine("Responding only to GET requests");
-                    continue;
-                }
-                
-                var response = context.Response;
-                const string responseString = "ok";
-                var buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
-                response.ContentLength64 = buffer.Length;
-                var output = response.OutputStream;
-                await output.WriteAsync(buffer.AsMemory(0, buffer.Length));
-                output.Close();
-
-                Console.WriteLine("responded ok");
-            }
+            MessageProcessors.Add(new IAmBusyModule(VkApi));
+            Console.WriteLine($"Added {nameof(IAmBusyModule)}");
         }
     }
 }

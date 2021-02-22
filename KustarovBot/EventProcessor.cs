@@ -12,11 +12,15 @@ using VkNet.Model.RequestParams;
 
 namespace KustarovBot
 {
-    public class EventProcessor
+    public class EventProcessor : IAsyncDisposable
     {
+        private readonly CancellationTokenSource _cts = new();
+        
         private readonly VkApi _vk;
         private readonly ulong _ts;
         private ulong? _pts;
+
+        private Task _eventProcessingWorker;
 
         public event Action<Message, User> OnNewMessage;
         
@@ -28,7 +32,12 @@ namespace KustarovBot
             _pts = longPoolServerResponse.Pts;
         }
 
-        public async Task ProcessEvents()
+        public void StartProcessingEvents()
+        {
+            _eventProcessingWorker = Task.Run(EventProcessingWorker, _cts.Token);
+        }
+
+        private async Task EventProcessingWorker()
         {
             try
             {
@@ -49,19 +58,30 @@ namespace KustarovBot
                         switch (eventCode)
                         {
                             case 4:
+                            {
+                                
                                 var history1 = history;
                                 var message = longPollResponse.Messages.SingleOrDefault(x => x.Id == history1[1]);
                                 var user = longPollResponse.Profiles.SingleOrDefault(x => x.Id == message.FromId);
                                 OnNewMessage?.Invoke(message, user);
                                 break;
+                            }
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{nameof(ProcessEvents)} crashed:\n{ex}");
+                Console.WriteLine($"{nameof(EventProcessingWorker)} crashed:\n{ex}");
+                throw;
             }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await _eventProcessingWorker;
+            _cts.Cancel();
+            _cts.Dispose();
         }
     }
 }

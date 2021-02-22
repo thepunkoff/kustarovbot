@@ -7,10 +7,14 @@
 
     <ItemGroup>
       <PackageReference Include="Telegram.Bot" Version="15.7.1" />
+      <PackageReference Include="YamlDotNet" Version="9.1.4" />
     </ItemGroup>
 
     <ItemGroup>
       <None Update="token.txt">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Menus\Data\iambusy.yml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
