@@ -27,8 +27,8 @@ namespace KustarovBotTelegramUI
             {
                 try
                 {
-                    // ToDo: Добавить Яна
-                    if (args.Message.From.Id != 583334704 || args.Message.From.Id != 583334704)
+                    // ToDo: use "permittedUsers" file
+                    if (args.Message.From.Id != 583334704 || args.Message.From.Id != 265677946)
                         await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Нет доступа.").Run();
                     
                     Console.WriteLine($"message recieved:\n{args.Message.From.FirstName} {args.Message.From.LastName}: '{args.Message.Text}'");
