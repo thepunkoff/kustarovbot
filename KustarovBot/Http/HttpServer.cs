@@ -3,7 +3,6 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using KustarovBot.MessageProcessing;
 
 namespace KustarovBot.Http
 {
@@ -47,7 +46,8 @@ namespace KustarovBot.Http
                         continue;
                     }
 
-                    switch (request.RawUrl)
+                    // ToDo: Вынести 
+                    switch (request.Url.AbsolutePath)
                     {
                         case "/status":
                         {
@@ -60,10 +60,7 @@ namespace KustarovBot.Http
                         }
                         case "/iambusy/changeText":
                         {
-                            
                             var queryString = request.QueryString;
-                            Console.WriteLine($"query string was '{queryString}'");
-                            Console.WriteLine($"GetValues(0) was '{queryString.GetValues(0)}'");
                             if (queryString.Keys.Count == 0 || queryString.Keys.Count > 1)
                             {
                                 await ReturnBadRequest(context.Response);
@@ -84,16 +81,58 @@ namespace KustarovBot.Http
                             }
 
                             context.Response.StatusCode = 200;
-                            IAmBusyModule.ResponseText = value;
+                            await Resources.SaveState(Resources.LoadState() with {ReplyText = value});
                             Console.WriteLine($"changed iambusy module response text to '{value}'");
+                            context.Response.Close();
+
+                            continue;
+                        }
+                        case "/iambusy/changeSchedule":
+                        {
+                            var state = Resources.LoadState();
+                            var queryString = request.QueryString;
+                            state = queryString.AllKeys.Aggregate(state, (current, key) => key switch
+                            {
+                                "monday" => current with {Monday = bool.Parse(queryString[key])},
+                                "tuesday" => current with {Tuesday = bool.Parse(queryString[key])},
+                                "wednesday" => current with {Wednesday = bool.Parse(queryString[key])},
+                                "thursday" => current with {Thursday = bool.Parse(queryString[key])},
+                                "friday" => current with {Friday = bool.Parse(queryString[key])},
+                                "saturday" => current with {Saturday = bool.Parse(queryString[key])},
+                                "sunday" => current with {Sunday = bool.Parse(queryString[key])},
+                                _ => current
+                            });
+
+                            await Resources.SaveState(state);
+                            context.Response.StatusCode = 200;
+                            context.Response.Close();
                             
-                            break;
-                        } 
+                            continue;
+                        }
+                        case "/iambusy/getSchedule":
+                        {
+                            var response = context.Response;
+                            response.StatusCode = 200;
+                            var state = Resources.LoadState();
+                            await response.WriteString("{" +
+                                                       $"\"Monday\": {state.Monday.ToString().ToLower()}, " +
+                                                       $"\"Tuesday\": {state.Tuesday.ToString().ToLower()}, " +
+                                                       $"\"Wednesday\": {state.Wednesday.ToString().ToLower()}, " +
+                                                       $"\"Thursday\": {state.Thursday.ToString().ToLower()}, " +
+                                                       $"\"Friday\": {state.Friday.ToString().ToLower()}, " +
+                                                       $"\"Saturday\": {state.Saturday.ToString().ToLower()}, " +
+                                                       $"\"Sunday\": {state.Sunday.ToString().ToLower()} " +
+                                                       "}");
+                            response.OutputStream.Close();
+                            response.Close();
+
+                            continue;
+                        }
                         default:
                         {
                             Console.WriteLine($"raw url was '{request.RawUrl}'. responding 400 bad request");
                             await ReturnBadRequest(context.Response);
-                            break;
+                            continue;
                         }
                     }
                 }
@@ -110,6 +149,7 @@ namespace KustarovBot.Http
             response.StatusCode = 400;
             await response.WriteString("400 bad request");
             response.OutputStream.Close();
+            response.Close();
         }
 
         public async ValueTask DisposeAsync()

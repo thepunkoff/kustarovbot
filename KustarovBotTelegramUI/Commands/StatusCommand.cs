@@ -10,19 +10,21 @@ namespace KustarovBotTelegramUI.Commands
     public class StatusCommand : ICommand
     {
         private readonly TelegramBotClient _botClient;
-        private readonly Message _message;
+        private readonly ChatId _chatId;
 
         public string DebugName { get; }
 
-        public StatusCommand(TelegramBotClient botClient, Message message)
+        public StatusCommand(TelegramBotClient botClient, ChatId chatId)
         {
             DebugName = nameof(SetTargetCommand);
             _botClient = botClient;
-            _message = message;
+            _chatId = chatId;
         }
 
         public async Task Run()
         {
+            Console.WriteLine($"running '{DebugName}' command");
+            
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += "status";
 
@@ -36,14 +38,14 @@ namespace KustarovBotTelegramUI.Commands
             Console.WriteLine($"bot returned status '{httpResponse.StatusCode}'");
             if (httpResponse.StatusCode != HttpStatusCode.OK)
             {
-                await _botClient.SendTextMessageAsync(_message.Chat.Id, "Произошла ошибка.");
+                await _botClient.SendTextMessageAsync(_chatId, "Произошла ошибка.");
             }
             else
             {
                 await using var responseStream = response.GetResponseStream();
                 var streamReader = new StreamReader(responseStream);
                 var status = await streamReader.ReadToEndAsync();
-                await _botClient.SendTextMessageAsync(_message.Chat.Id, $"Статус: '{status}'");
+                await _botClient.SendTextMessageAsync(_chatId, $"Статус: '{status}'");
             }
         }
     }

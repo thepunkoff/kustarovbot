@@ -14,8 +14,6 @@ namespace KustarovBot.MessageProcessing
         private readonly Random _rng = new();
         private readonly UserMessageCounter _messageCounter = new();
 
-        public static string ResponseText = "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!";
-
         public IAmBusyModule(VkApi vkApi)
         {
             _vkApi = vkApi;
@@ -27,12 +25,25 @@ namespace KustarovBot.MessageProcessing
             {
                 try
                 {
-                    await _vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams()
+                    var dayOfWeek = DateTime.Now.DayOfWeek;
+                    var state = Resources.LoadState();
+                    var mondayOk = dayOfWeek == DayOfWeek.Monday && state.Monday;
+                    var tuesdayOk = dayOfWeek == DayOfWeek.Tuesday && state.Tuesday;
+                    var wednesdayOk = dayOfWeek == DayOfWeek.Wednesday && state.Wednesday;
+                    var thursdayOk = dayOfWeek == DayOfWeek.Thursday && state.Thursday;
+                    var fridayOk = dayOfWeek == DayOfWeek.Friday && state.Friday;
+                    var saturdayOk = dayOfWeek == DayOfWeek.Saturday && state.Saturday;
+                    var sundayOk = dayOfWeek == DayOfWeek.Sunday && state.Sunday;
+
+                    if (mondayOk || tuesdayOk || wednesdayOk || thursdayOk || fridayOk || saturdayOk || sundayOk)
                     {
-                        PeerId = user.Id,
-                        Message = ResponseText,
-                        RandomId = _rng.Next(),
-                    });
+                        await _vkApi.Messages.SendAsync(new VkNet.Model.RequestParams.MessagesSendParams
+                        {
+                            PeerId = user.Id,
+                            Message = state.ReplyText,
+                            RandomId = _rng.Next(),
+                        });
+                    }
                 }
                 catch (CaptchaNeededException)
                 {

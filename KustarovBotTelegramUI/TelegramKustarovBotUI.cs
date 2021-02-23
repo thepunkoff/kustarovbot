@@ -15,6 +15,7 @@ namespace KustarovBotTelegramUI
         private TelegramBotClient _botClient;
         private CommandParser _commandParser;
         public static Uri Target = new("http://localhost:8080");
+        public static ProcedureCode ActiveProcedure = ProcedureCode.NoProcedure;
         
         public async Task Run()
         {
@@ -26,15 +27,47 @@ namespace KustarovBotTelegramUI
             {
                 try
                 {
-                    Console.WriteLine("new message");
-                    var command = _commandParser.ParseCommand(args.Message);
-                    Console.WriteLine($"running '{command.DebugName}' command");
+                    // ToDo: Добавить Яна
+                    if (args.Message.From.Id != 583334704 || args.Message.From.Id != 583334704)
+                        await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Нет доступа.").Run();
+                    
+                    Console.WriteLine($"message recieved:\n{args.Message.From.FirstName} {args.Message.From.LastName}: '{args.Message.Text}'");
+
+                    ICommand command;
+                    if (ActiveProcedure == ProcedureCode.IAmBusy_ChangeText)
+                    {
+                        command = new IAmBusyChangeTextCommand(_botClient, args.Message.Chat.Id, args.Message.Text);
+                        ActiveProcedure = ProcedureCode.NoProcedure;
+                    }
+                    else
+                    {
+                        command = _commandParser.ParseCommand(args.Message.Chat.Id, args.Message.Text);
+                    }
+
                     await command.Run();
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Unexpected error occured while processing user message:\n{ex}");
-                    await new SendMessageCommand(_botClient, args.Message, "Произошла ошибка.").Run();
+                    await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Произошла ошибка.").Run();
+                }
+            };
+            
+            _botClient.OnCallbackQuery += async (_, args) =>
+            {
+                try
+                {
+                    Console.WriteLine("callback query recieved");
+                    foreach (var rawCommand in args.CallbackQuery.Data.Split(';'))
+                    {
+                        var command = _commandParser.ParseCommand(args.CallbackQuery.Message.Chat.Id, rawCommand, args.CallbackQuery.Message.MessageId);
+                        await command.Run();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Unexpected error occured while processing user message:\n{ex}");
+                    await new SendRawMessageCommand(_botClient, args.CallbackQuery.Message.Chat.Id, "Произошла ошибка.").Run();
                 }
             };
             

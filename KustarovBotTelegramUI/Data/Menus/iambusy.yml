@@ -1,0 +1,11 @@
+﻿Text: "Что сделать?"
+Rows:
+- Buttons:
+  - Text: "Поменять текст ответа"
+    Commands:
+    - "/procedure IAmBusy_ChangeText"
+    - "/message iambusy_changeText"
+- Buttons:
+  - Text: "Поменять расписание"
+    Commands:
+    - "/scheduleMenu"
