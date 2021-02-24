@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading;
@@ -16,6 +17,7 @@ namespace KustarovBotTelegramUI
         private CommandParser _commandParser;
         public static Uri Target = new("http://localhost:8080");
         public static ProcedureCode ActiveProcedure = ProcedureCode.NoProcedure;
+        private List<int> _permittedUsers = new List<int> {583334704, 265677946};
         
         public async Task Run()
         {
@@ -28,8 +30,11 @@ namespace KustarovBotTelegramUI
                 try
                 {
                     // ToDo: use "permittedUsers" file
-                    if (args.Message.From.Id != 583334704 || args.Message.From.Id != 265677946)
+                    if (!_permittedUsers.Contains(args.Message.From.Id))
+                    {
                         await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Нет доступа.").Run();
+                        return;
+                    }
                     
                     Console.WriteLine($"message recieved:\n{args.Message.From.FirstName} {args.Message.From.LastName}: '{args.Message.Text}'");
 

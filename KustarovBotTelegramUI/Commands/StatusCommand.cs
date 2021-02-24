@@ -32,20 +32,26 @@ namespace KustarovBotTelegramUI.Commands
             var request = WebRequest.Create(ub.ToString());
             request.Method = "GET";
 
-            using var response = await request.GetResponseAsync();
-            var httpResponse = (HttpWebResponse) response;
-
-            Console.WriteLine($"bot returned status '{httpResponse.StatusCode}'");
-            if (httpResponse.StatusCode != HttpStatusCode.OK)
+            try
             {
-                await _botClient.SendTextMessageAsync(_chatId, "Произошла ошибка.");
-            }
-            else
-            {
+                using var response = await request.GetResponseAsync();
+                var httpResponse = (HttpWebResponse) response;
                 await using var responseStream = response.GetResponseStream();
-                var streamReader = new StreamReader(responseStream);
-                var status = await streamReader.ReadToEndAsync();
-                await _botClient.SendTextMessageAsync(_chatId, $"Статус: '{status}'");
+                Console.WriteLine($"bot returned status '{httpResponse.StatusCode}'");
+                if (httpResponse.StatusCode == HttpStatusCode.OK)
+                {
+                    var streamReader = new StreamReader(responseStream);
+                    var status = await streamReader.ReadToEndAsync();
+                    await _botClient.SendTextMessageAsync(_chatId, $"Статус: '{status}'");
+                }
+            }
+            catch (WebException wex)
+            {
+                Console.WriteLine(wex.ToString());
+                if (wex.Message.Contains("refused"))
+                    await _botClient.SendTextMessageAsync(_chatId, "Статус: 'timeout'");
+                else
+                    await _botClient.SendTextMessageAsync(_chatId, "Статус: 'not ok'");
             }
         }
     }

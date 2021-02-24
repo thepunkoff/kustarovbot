@@ -43,7 +43,7 @@ namespace KustarovBot
             {
                 while (true)
                 {
-                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new MessagesGetLongPollHistoryParams()
+                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new MessagesGetLongPollHistoryParams
                     {
                         Ts = _ts,
                         Pts = _pts,
@@ -59,10 +59,21 @@ namespace KustarovBot
                         {
                             case 4:
                             {
-                                
-                                var history1 = history;
-                                var message = longPollResponse.Messages.SingleOrDefault(x => x.Id == history1[1]);
+                                var message = longPollResponse.Messages.SingleOrDefault(x => x.Id == history[1]);
+                                if (message is null)
+                                {
+                                    Console.WriteLine("[event] ERROR: message was null!");
+                                    break;
+                                }
+
                                 var user = longPollResponse.Profiles.SingleOrDefault(x => x.Id == message.FromId);
+                                if (user is null)
+                                {
+                                    Console.WriteLine("[event] ERROR: user was null!");
+                                    break;
+                                }
+                                
+                                Console.WriteLine($"[event] incoming message from user {user.FirstName} {user.LastName} ({user.Domain})");
                                 OnNewMessage?.Invoke(message, user);
                                 break;
                             }

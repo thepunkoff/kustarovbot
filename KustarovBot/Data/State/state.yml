@@ -1,7 +1,7 @@
 ﻿ReplyText: "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!"
 Monday: false
 Tuesday: false
-Wednesday: false
+Wednesday: true
 Thursday: false
 Friday: false
 Saturday: true
