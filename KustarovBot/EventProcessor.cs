@@ -17,6 +17,8 @@ namespace KustarovBot
         private readonly CancellationTokenSource _cts = new();
         
         private readonly VkApi _vk;
+        private readonly User _self;
+
         private readonly ulong _ts;
         private ulong? _pts;
 
@@ -24,9 +26,10 @@ namespace KustarovBot
 
         public event Action<Message, User> OnNewMessage;
         
-        public EventProcessor(VkApi api)
+        public EventProcessor(VkApi api, User self)
         {
             _vk = api;
+            _self = self;
             var longPoolServerResponse = _vk.Messages.GetLongPollServer(needPts: true);
             _ts = Convert.ToUInt64(longPoolServerResponse.Ts);
             _pts = longPoolServerResponse.Pts;
@@ -48,6 +51,7 @@ namespace KustarovBot
                         Ts = _ts,
                         Pts = _pts,
                         Fields = UsersFields.Domain,
+                        
                     });
 
                     _pts = longPollResponse.NewPts;
@@ -65,6 +69,17 @@ namespace KustarovBot
                                     Console.WriteLine("[event] ERROR: message was null!");
                                     break;
                                 }
+
+                                // Игнорируем свои сообщения кому-либо
+                                // Todo: понять, как игнорировать сообщения бота
+                                if (message.FromId == _self.Id && message.FromId != message.PeerId)
+                                {
+                                    Console.WriteLine("[event] ignoring bot message.");
+                                    break;
+                                }
+
+                                if (message.FromId != message.PeerId)
+                                    Console.WriteLine("[event] can't ignore self message yet.");
 
                                 var user = longPollResponse.Profiles.SingleOrDefault(x => x.Id == message.FromId);
                                 if (user is null)

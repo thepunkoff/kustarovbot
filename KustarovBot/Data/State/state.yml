@@ -1,8 +1,9 @@
-﻿ReplyText: "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!"
-Monday: false
-Tuesday: false
+﻿BotIgnoreListName: "bot_iambusy_ignore"
+ReplyText: "Доброе время суток! Сегодня я не работаю, напишите мне в рабочий день. Спасибо за понимание!"
+Monday: true
+Tuesday: true
 Wednesday: true
-Thursday: false
-Friday: false
+Thursday: true
+Friday: true
 Saturday: true
 Sunday: true

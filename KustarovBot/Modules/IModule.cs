@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using VkNet.Model;
 
-namespace KustarovBot.MessageProcessing
+namespace KustarovBot.Modules
 {
     public interface IModule
     {

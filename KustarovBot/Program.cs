@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using KustarovBot.Http;
-using KustarovBot.MessageProcessing;
+using KustarovBot.Modules;
 using VkNet;
+using VkNet.Categories;
 using VkNet.Enums.Filters;
 using VkNet.Model;
 
@@ -20,14 +20,18 @@ namespace KustarovBot
         private static readonly List<IModule> MessageProcessors = new();
         private static EventProcessor _eventProcessor;
         private static readonly HttpServer HttpServer = new(8080);
+        private static User _self;
 
         private static async Task Main()
         {
             try
             {
+                Console.WriteLine($"[start] initializing KustarovBot v {Assembly.GetExecutingAssembly().GetName().Version}");
                 await Authorize();
                 AddMessageProcessors();
                 HttpServer.Start();
+                
+                _eventProcessor = new EventProcessor(VkApi, _self);
 
                 _eventProcessor.OnNewMessage += async (message, user) =>
                 {
@@ -43,11 +47,13 @@ namespace KustarovBot
                 };
                 _eventProcessor.StartProcessingEvents();
 
+                Console.WriteLine($"[start] bot initialized successfully.");
+
                 Thread.Sleep(Timeout.Infinite);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"unhandled exception:\n{ex}");
+                Console.WriteLine($"[start] unhandled exception:\n{ex}");
             }
             finally
             {
@@ -59,24 +65,23 @@ namespace KustarovBot
 
         private static async Task Authorize()
         {
-            Console.WriteLine($"Initializing KustarovBot v {Assembly.GetExecutingAssembly().GetName().Version}");
             await VkApi.AuthorizeAsync(new ApiAuthParams
             {
                 AccessToken = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "token.txt")),
                 Settings = Settings.All | Settings.Offline,
             });
 
-            _eventProcessor = new EventProcessor(VkApi);
 
             var res = await VkApi.Users.GetAsync(Array.Empty<long>(), ProfileFields.Domain);
-            var self = res.Single();
-            Console.WriteLine($"Authorized as {self.FirstName} {self.LastName} ({self.Domain})");
+            _self = res.Single();
+            Console.WriteLine($"[start] authorized as {_self.FirstName} {_self.LastName} ({_self.Domain})");
         }
 
         private static void AddMessageProcessors()
         {
-            MessageProcessors.Add(new IAmBusyModule(VkApi));
-            Console.WriteLine($"Added {nameof(IAmBusyModule)}");
+            Console.WriteLine($"[start] adding '{nameof(IAmBusyModule)}' module...");
+            MessageProcessors.Add(new IAmBusyModule(VkApi, _self.Id));
+            Console.WriteLine($"[start] module '{nameof(IAmBusyModule)}' added.");
         }
     }
 }
