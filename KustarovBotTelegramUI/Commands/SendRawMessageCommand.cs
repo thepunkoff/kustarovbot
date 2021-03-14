@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Threading.Tasks;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -8,6 +9,9 @@ namespace KustarovBotTelegramUI.Commands
 {
     public class SendRawMessageCommand : ICommand
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string SendRawMessage = "sendrawmessage";
+
         private readonly ChatId _chatId;
         private readonly TelegramBotClient _botClient;
         private readonly string _text;
@@ -22,7 +26,7 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Console.WriteLine($"running '{DebugName}' command");
+            Logger.Trace($"[{SendRawMessage}] running '{DebugName}' command");
             await _botClient.SendTextMessageAsync(_chatId, _text);
         }
     }

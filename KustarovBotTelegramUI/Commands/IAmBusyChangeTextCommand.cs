@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -9,6 +10,10 @@ namespace KustarovBotTelegramUI.Commands
 {
     public class IAmBusyChangeTextCommand : ICommand
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        // ReSharper disable once InconsistentNaming
+        private const string IAmBusyChangeText = "iambusy.changetext";
+
         private readonly TelegramBotClient _botClient;
         private readonly ChatId _chatId;
         private readonly string _text;
@@ -24,12 +29,12 @@ namespace KustarovBotTelegramUI.Commands
         
         public async Task Run()
         {
-            Console.WriteLine($"running '{DebugName}' command");
+            Logger.Trace($"[{IAmBusyChangeText}] running '{DebugName}' command");
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += $"iambusy/changeText";
             ub.Query = $"text={_text}";
 
-            Console.WriteLine($"sending request to {ub}");
+            Logger.Trace($"[{IAmBusyChangeText}] sending request to {ub}");
             var request = WebRequest.CreateHttp(ub.ToString());
             request.Method = "GET";
 
@@ -38,14 +43,14 @@ namespace KustarovBotTelegramUI.Commands
             {
                 var webResponse = await request.GetResponseAsync();
                 var httpResponse = (HttpWebResponse) webResponse;
-                Console.WriteLine($"bot returned status code '{httpResponse.StatusCode}'");
+                Logger.Trace($"[{IAmBusyChangeText}] bot returned status code '{httpResponse.StatusCode}'");
                 if (httpResponse.StatusCode == HttpStatusCode.OK)
                     await _botClient.SendTextMessageAsync(_chatId, "Текст ответа изменен!");
             }
             catch (WebException wex)
             {
                 var errorResponse = (HttpWebResponse) wex.Response;
-                Console.WriteLine($"bot returned status code '{errorResponse.StatusCode}'");
+                Logger.Trace($"[{IAmBusyChangeText}] bot returned status code '{errorResponse.StatusCode}'");
                 await _botClient.SendTextMessageAsync(_chatId, "Произошла ошибка.");
             }
         }

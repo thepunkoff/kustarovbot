@@ -2,6 +2,7 @@
 using System.Net;
 using System.Threading.Tasks;
 using KustarovBotTelegramUI.State;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -9,6 +10,9 @@ namespace KustarovBotTelegramUI.Commands
 {
     public class IAmBusyChangeDayCommand : ICommand
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string ChangeDay = "changeday";
+
         private readonly TelegramBotClient _botClient;
         private readonly ChatId _chatId;
         private readonly string _day;
@@ -27,12 +31,12 @@ namespace KustarovBotTelegramUI.Commands
         
         public async Task Run()
         {
-            Console.WriteLine($"running '{DebugName}' command");
+            Logger.Trace($"[{ChangeDay}] running '{DebugName}' command");
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += "iambusy/changeSchedule";
             ub.Query += $"?{_day}={_value}";
 
-            Console.WriteLine($"sending request to {ub}");
+            Logger.Trace($"[{ChangeDay}] sending request to {ub}");
             var request = WebRequest.CreateHttp(ub.ToString());
             request.Method = "GET";
 
@@ -41,14 +45,14 @@ namespace KustarovBotTelegramUI.Commands
             {
                 var webResponse = await request.GetResponseAsync();
                 var httpResponse = (HttpWebResponse) webResponse;
-                Console.WriteLine($"bot returned status code '{httpResponse.StatusCode}'");
+                Logger.Trace($"[{ChangeDay}] bot returned status code '{httpResponse.StatusCode}'");
                 if (httpResponse.StatusCode == HttpStatusCode.OK)
                     await new SendScheduleMenuCommand(_botClient, _chatId, _originalMessageId).Run();
             }
             catch (WebException wex)
             {
                 var errorResponse = (HttpWebResponse) wex.Response;
-                Console.WriteLine($"bot returned status code '{errorResponse.StatusCode}'");
+                Logger.Trace($"[{ChangeDay}] bot returned status code '{errorResponse.StatusCode}'");
                 await _botClient.SendTextMessageAsync(_chatId, "Произошла ошибка.");
             }
         }

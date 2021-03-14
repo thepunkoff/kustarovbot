@@ -3,11 +3,15 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 
 namespace KustarovBot.Http
 {
     public class HttpServer : IAsyncDisposable
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string Http = "http";
+
         private readonly int _port;
         private readonly HttpListener _httpListener = new();
         private readonly CancellationTokenSource _cts = new();
@@ -26,7 +30,7 @@ namespace KustarovBot.Http
 
             _serverWorker = Task.Run(ServerWorker, _cts.Token);
 
-            Console.WriteLine($"[http] started listening http requests on port {_port}");
+            Logger.Info($"[{Http}] started listening http requests on port {_port}");
         }
 
         private async Task ServerWorker()
@@ -49,17 +53,17 @@ namespace KustarovBot.Http
                     {
                         case "/status":
                         {
-                            Console.WriteLine($"[http] got status request from {request.RemoteEndPoint}");
+                            Logger.Trace($"[{Http}] got status request from {request.RemoteEndPoint}");
                             var response = context.Response;
                             response.StatusCode = 200;
                             await response.WriteString("ok");
                             response.OutputStream.Close();
-                            Console.WriteLine("[http] responded ok");
+                            Logger.Trace($"[{Http}] responded ok");
                             break;
                         }
                         case "/iambusy/changeText":
                         {
-                            Console.WriteLine($"[http] got changeText request from {request.RemoteEndPoint}");
+                            Logger.Trace($"[{Http}] got changeText request from {request.RemoteEndPoint}");
                             
                             var queryString = request.QueryString;
                             if (queryString.Keys.Count == 0 || queryString.Keys.Count > 1)
@@ -83,14 +87,14 @@ namespace KustarovBot.Http
 
                             context.Response.StatusCode = 200;
                             await Resources.SaveState(Resources.LoadState() with {ReplyText = value});
-                            Console.WriteLine($"[http] changed iambusy module response text to '{value}'");
+                            Logger.Trace($"[{Http}] changed iambusy module response text to '{value}'");
                             context.Response.Close();
 
                             continue;
                         }
                         case "/iambusy/changeSchedule":
                         {
-                            Console.WriteLine($"[http] got chengeSchedule request from {request.RemoteEndPoint}");
+                            Logger.Trace($"[{Http}] got chengeSchedule request from {request.RemoteEndPoint}");
                             
                             var state = Resources.LoadState();
                             var queryString = request.QueryString;
@@ -107,7 +111,7 @@ namespace KustarovBot.Http
                             });
 
                             await Resources.SaveState(state);
-                            Console.WriteLine($"[http] saved new state.");
+                            Logger.Trace($"[{Http}] saved new state.");
                             context.Response.StatusCode = 200;
                             context.Response.Close();
                             
@@ -115,7 +119,7 @@ namespace KustarovBot.Http
                         }
                         case "/iambusy/getSchedule":
                         {
-                            Console.WriteLine($"[http] got getSchedule request from {request.RemoteEndPoint}");
+                            Logger.Trace($"[{Http}] got getSchedule request from {request.RemoteEndPoint}");
                             
                             var response = context.Response;
                             response.StatusCode = 200;
@@ -136,7 +140,7 @@ namespace KustarovBot.Http
                         }
                         default:
                         {
-                            Console.WriteLine($"[http] raw url was '{request.RawUrl}'. responding 400 bad request");
+                            Logger.Trace($"[{Http}] raw url was '{request.RawUrl}'. responding 400 bad request.");
                             await ReturnBadRequest(context.Response);
                             continue;
                         }
@@ -145,7 +149,7 @@ namespace KustarovBot.Http
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[http] {nameof(ServerWorker)} crashed:\n{ex}");
+                Logger.Error($"[{Http}] {nameof(ServerWorker)} crashed:\n{ex}");
                 throw;
             }
         }
@@ -164,7 +168,7 @@ namespace KustarovBot.Http
             _cts.Cancel();
             _cts.Dispose();
             _httpListener.Stop();
-            Console.WriteLine("[http] stopped http server on port 8080");
+            Logger.Trace($"[{Http}] stopped http server on port 8080.");
         }
     }
 }

@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using KustarovBotTelegramUI.Commands;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using File = System.IO.File;
@@ -13,14 +15,18 @@ namespace KustarovBotTelegramUI
 {
     public class TelegramKustarovBotUI
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string Event = "event";
+
         private TelegramBotClient _botClient;
         private CommandParser _commandParser;
         public static Uri Target = new("http://localhost:8080");
         public static ProcedureCode ActiveProcedure = ProcedureCode.NoProcedure;
-        private List<int> _permittedUsers = new List<int> {583334704, 265677946};
+        private readonly List<int> _permittedUsers = new List<int> {583334704, 265677946};
         
         public async Task Run()
         {
+            Logger.Trace($"[{Event}] initializing KustarovBotTelegramUi v {Assembly.GetExecutingAssembly().GetName().Version}");
             var token = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "token.txt"));
             _botClient = new TelegramBotClient(token);
             _commandParser = new CommandParser(_botClient);
@@ -36,7 +42,7 @@ namespace KustarovBotTelegramUI
                         return;
                     }
                     
-                    Console.WriteLine($"message recieved:\n{args.Message.From.FirstName} {args.Message.From.LastName}: '{args.Message.Text}'");
+                    Logger.Trace($"[{Event}] message recieved:\n{args.Message.From.FirstName} {args.Message.From.LastName}: '{args.Message.Text}'");
 
                     ICommand command;
                     if (ActiveProcedure == ProcedureCode.IAmBusy_ChangeText)
@@ -53,7 +59,7 @@ namespace KustarovBotTelegramUI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Unexpected error occured while processing user message:\n{ex}");
+                    Logger.Error($"[{Event}] unexpected error occured while processing user message:\n{ex}");
                     await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Произошла ошибка.").Run();
                 }
             };
@@ -62,7 +68,7 @@ namespace KustarovBotTelegramUI
             {
                 try
                 {
-                    Console.WriteLine("callback query recieved");
+                    Logger.Trace($"[{Event}] callback query recieved");
                     foreach (var rawCommand in args.CallbackQuery.Data.Split(';'))
                     {
                         var command = _commandParser.ParseCommand(args.CallbackQuery.Message.Chat.Id, rawCommand, args.CallbackQuery.Message.MessageId);
@@ -71,7 +77,7 @@ namespace KustarovBotTelegramUI
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Unexpected error occured while processing user message:\n{ex}");
+                    Logger.Error($"[{Event}] unexpected error occured while processing user message:\n{ex}");
                     await new SendRawMessageCommand(_botClient, args.CallbackQuery.Message.Chat.Id, "Произошла ошибка.").Run();
                 }
             };

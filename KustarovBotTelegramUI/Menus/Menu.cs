@@ -5,11 +5,15 @@ using System.Net;
 using System.Text.Json;
 using System.Threading.Tasks;
 using KustarovBotTelegramUI.State;
+using NLog;
 
 namespace KustarovBotTelegramUI.Menus
 {
     public class Menu
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string MenuLabel = "menu";
+
         public string Id { get; set; }
         public string Text { get; set; }
         public List<Row> Rows { get; set; }
@@ -20,7 +24,7 @@ namespace KustarovBotTelegramUI.Menus
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += "iambusy/getSchedule";
 
-            Console.WriteLine($"sending request to {ub}");
+            Logger.Trace($"[{MenuLabel}] sending request to {ub}");
             var request = WebRequest.CreateHttp(ub.ToString());
             request.Method = "GET";
 
@@ -29,7 +33,7 @@ namespace KustarovBotTelegramUI.Menus
             {
                 var webResponse = await request.GetResponseAsync();
                 var httpResponse = (HttpWebResponse) webResponse;
-                Console.WriteLine($"bot returned status code '{httpResponse.StatusCode}'");
+                Logger.Trace($"[{MenuLabel}] bot returned status code '{httpResponse.StatusCode}'");
                 if (httpResponse.StatusCode == HttpStatusCode.OK)
                 {
                     await using var responseStream = httpResponse.GetResponseStream();
@@ -41,7 +45,7 @@ namespace KustarovBotTelegramUI.Menus
             catch (WebException wex)
             {
                 var errorResponse = (HttpWebResponse) wex.Response;
-                Console.WriteLine($"bot returned status code '{errorResponse.StatusCode}'");
+                Logger.Trace($"[{MenuLabel}] bot returned status code '{errorResponse.StatusCode}'");
             }
 
             return new Menu

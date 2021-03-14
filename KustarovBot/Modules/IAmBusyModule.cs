@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using KustarovBot.Utils;
+using NLog;
 using VkNet;
 using VkNet.Enums.Filters;
 using VkNet.Exception;
@@ -17,6 +18,10 @@ namespace KustarovBot.Modules
     // ReSharper disable once InconsistentNaming
     public class IAmBusyModule : IModule
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        // ReSharper disable once InconsistentNaming
+        private const string IAmBusy = "iambusy";
+
         private readonly VkApi _vkApi;
         private readonly Random _rng = new();
         private readonly UserMessageCounter _messageCounter = new();
@@ -28,17 +33,17 @@ namespace KustarovBot.Modules
             _vkApi = vkApi;
             var friendLists = _vkApi.Friends.GetLists(selfId);
             if (friendLists.TotalCount == 0)
-                Console.WriteLine("[iambusy] no friend lists were found. all messages will be processed by the module.");
+                Logger.Info($"[{IAmBusy}] no friend lists were found. all messages will be processed by the module.");
             
             var state = Resources.LoadState();
             var ignoreList = friendLists.SingleOrDefault(x => x.Name == state.BotIgnoreListName);
             if (ignoreList is null)
             {
-                Console.WriteLine($"[iambusy] ignore list with name '{state.BotIgnoreListName}' doesn't exist. all messages will be processed by the module.");
+                Logger.Warn($"[{IAmBusy}] ignore list with name '{state.BotIgnoreListName}' doesn't exist. all messages will be processed by the module.");
                 return;
             }
 
-            Console.WriteLine($"[iambusy] filtering by ignore list '{state.BotIgnoreListName}' is on.");
+            Logger.Info($"[{IAmBusy}] filtering by ignore list '{state.BotIgnoreListName}' is on.");
 
             _ignoredUserIds = _vkApi.Friends.Get(new FriendsGetParams()
             {
@@ -46,20 +51,20 @@ namespace KustarovBot.Modules
                 Fields = ProfileFields.Uid
             }).Select(x => x.Id).ToArray();
             
-            Console.WriteLine($"[iambusy] {_ignoredUserIds.Length} ignored users found.");
+            Logger.Info($"[{IAmBusy}] {_ignoredUserIds.Length} ignored users found.");
         }
         
         public async Task ProcessMessage(Message message, User user)
         {
-            Console.WriteLine("[iambusy] processing message...");
+            Logger.Trace($"[{IAmBusy}] processing message...");
 
             if (_ignoredUserIds.Contains(user.Id))
             {
-                Console.WriteLine($"[iambusy] user '{user.FirstName} {user.LastName} ({user.Domain})' was found in the ignore list. message won't be processed.");
+                Logger.Trace($"[{IAmBusy}] user '{user.FirstName} {user.LastName} ({user.Domain})' was found in the ignore list. message won't be processed.");
                 return;
             }
             
-            Console.WriteLine($"[iambusy] user '{user.FirstName} {user.LastName} ({user.Domain})' is not in the ignore list.");
+            Logger.Trace($"[{IAmBusy}] user '{user.FirstName} {user.LastName} ({user.Domain})' is not in the ignore list.");
             
             var dayOfWeek = DateTime.Now.DayOfWeek;
             var state = Resources.LoadState();
@@ -73,7 +78,7 @@ namespace KustarovBot.Modules
 
             if (!mondayOk && !tuesdayOk && !wednesdayOk && !thursdayOk && !fridayOk && !saturdayOk && !sundayOk)
             {
-                Console.WriteLine($"[iambusy] day of week '{dayOfWeek}' is ignored in bot rules. message won't be processed.");
+                Logger.Trace($"[{IAmBusy}] day of week '{dayOfWeek}' is ignored in bot rules. message won't be processed.");
                 return;
             }
 
@@ -83,7 +88,7 @@ namespace KustarovBot.Modules
             {
                 try
                 {
-                    Console.WriteLine("[iambusy] sending reply text.");
+                    Logger.Trace($"[{IAmBusy}] sending reply text.");
                     await _vkApi.Messages.SendAsync(new MessagesSendParams
                     {
                         PeerId = user.Id,
@@ -94,12 +99,13 @@ namespace KustarovBot.Modules
                 }
                 catch (CaptchaNeededException)
                 {
-                    Console.WriteLine("captcha needed. skipping.");
+                    // TODO: Пробовать еще.
+                    Logger.Trace($"[{IAmBusy}] captcha needed. skipping.");
                 }
             }
             else
             {
-                Console.WriteLine($"[iambusy] skipping message ({modulo}/{SkipCount})");
+                Logger.Trace($"[{IAmBusy}] skipping message ({modulo}/{SkipCount})");
             }
                 
             _messageCounter.Increment(user);

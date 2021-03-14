@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using KustarovBot.Http;
 using KustarovBot.Modules;
+using NLog;
 using VkNet;
 using VkNet.Categories;
 using VkNet.Enums.Filters;
@@ -16,6 +17,9 @@ namespace KustarovBot
 {
     public static class Program
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string Start = "start";
+
         private static readonly VkApi VkApi = new();
         private static readonly List<IModule> MessageProcessors = new();
         private static EventProcessor _eventProcessor;
@@ -26,7 +30,7 @@ namespace KustarovBot
         {
             try
             {
-                Console.WriteLine($"[start] initializing KustarovBot v {Assembly.GetExecutingAssembly().GetName().Version}");
+                Logger.Info($"[{Start}] initializing KustarovBot v {Assembly.GetExecutingAssembly().GetName().Version}");
                 await Authorize();
                 AddMessageProcessors();
                 HttpServer.Start();
@@ -42,18 +46,18 @@ namespace KustarovBot
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"unexpected error occured while processing message:\n{ex}");
+                        Logger.Error($"[{Start}] unexpected error occured while processing message:\n{ex}");
                     }
                 };
                 _eventProcessor.StartProcessingEvents();
 
-                Console.WriteLine($"[start] bot initialized successfully.");
+                Logger.Info($"[{Start}] bot initialized successfully.");
 
                 Thread.Sleep(Timeout.Infinite);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[start] unhandled exception:\n{ex}");
+                Logger.Error($"[{Start}] unhandled exception:\n{ex}");
             }
             finally
             {
@@ -74,14 +78,14 @@ namespace KustarovBot
 
             var res = await VkApi.Users.GetAsync(Array.Empty<long>(), ProfileFields.Domain);
             _self = res.Single();
-            Console.WriteLine($"[start] authorized as {_self.FirstName} {_self.LastName} ({_self.Domain})");
+            Logger.Info($"[{Start}] authorized as {_self.FirstName} {_self.LastName} ({_self.Domain})");
         }
 
         private static void AddMessageProcessors()
         {
-            Console.WriteLine($"[start] adding '{nameof(IAmBusyModule)}' module...");
+            Logger.Trace($"[{Start}] adding '{nameof(IAmBusyModule)}' module...");
             MessageProcessors.Add(new IAmBusyModule(VkApi, _self.Id));
-            Console.WriteLine($"[start] module '{nameof(IAmBusyModule)}' added.");
+            Logger.Info($"[{Start}] module '{nameof(IAmBusyModule)}' added.");
         }
     }
 }

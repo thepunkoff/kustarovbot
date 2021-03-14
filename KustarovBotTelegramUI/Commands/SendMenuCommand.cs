@@ -5,6 +5,7 @@ using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using KustarovBotTelegramUI.Extensions;
 using KustarovBotTelegramUI.Menus;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -13,6 +14,9 @@ namespace KustarovBotTelegramUI.Commands
 {
     public class SendMenuCommand : ICommand
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string SendMenu = "sendmenu";
+
         private readonly ChatId _chatId;
         private readonly TelegramBotClient _botClient;
         private readonly string _menuId;
@@ -32,7 +36,7 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Console.WriteLine($"running '{DebugName}' command");
+            Logger.Trace($"[{SendMenu}] running '{DebugName}' command");
             var menu = Resources.GetMenu(_menuId);
             var markup = menu.Rows.MakeMarkup();
             

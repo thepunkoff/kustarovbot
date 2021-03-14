@@ -5,15 +5,21 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NLog;
 using VkNet;
 using VkNet.Enums.Filters;
+using VkNet.Exception;
 using VkNet.Model;
+using VkNet.Model.Attachments;
 using VkNet.Model.RequestParams;
 
 namespace KustarovBot
 {
     public class EventProcessor : IAsyncDisposable
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string Event = "event";
+        
         private readonly CancellationTokenSource _cts = new();
         
         private readonly VkApi _vk;
@@ -46,13 +52,24 @@ namespace KustarovBot
             {
                 while (true)
                 {
-                    var longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new MessagesGetLongPollHistoryParams
+                    LongPollHistoryResponse longPollResponse;
+                    try
                     {
-                        Ts = _ts,
-                        Pts = _pts,
-                        Fields = UsersFields.Domain,
-                        
-                    });
+
+                        longPollResponse = await _vk.Messages.GetLongPollHistoryAsync(new MessagesGetLongPollHistoryParams
+                        {
+                            Ts = _ts,
+                            Pts = _pts,
+                            Fields = UsersFields.Domain,
+
+                        });
+
+                    }
+                    catch (VkApiMethodInvokeException apiEx) when (apiEx.Message.ToLowerInvariant().Contains("unknown application"))
+                    {
+                        Logger.Warn($"[{Event}] long poll history request failed. trying again. (error code: {apiEx.ErrorCode}):\n{apiEx}");
+                        continue;
+                    }
 
                     _pts = longPollResponse.NewPts;
 
@@ -66,7 +83,7 @@ namespace KustarovBot
                                 var message = longPollResponse.Messages.SingleOrDefault(x => x.Id == history[1]);
                                 if (message is null)
                                 {
-                                    Console.WriteLine("[event] ERROR: message was null!");
+                                    Logger.Error($"[{Event}] message was null.");
                                     break;
                                 }
 
@@ -74,21 +91,21 @@ namespace KustarovBot
                                 // Todo: понять, как игнорировать сообщения бота
                                 if (message.FromId == _self.Id && message.FromId != message.PeerId)
                                 {
-                                    Console.WriteLine("[event] ignoring bot message.");
+                                    Logger.Debug($"[{Event}] ignoring bot message.");
                                     break;
                                 }
 
                                 if (message.FromId != message.PeerId)
-                                    Console.WriteLine("[event] can't ignore self message yet.");
+                                    Logger.Debug($"[{Event}] can't ignore self message yet.");
 
                                 var user = longPollResponse.Profiles.SingleOrDefault(x => x.Id == message.FromId);
                                 if (user is null)
                                 {
-                                    Console.WriteLine("[event] ERROR: user was null!");
+                                    Logger.Error($"[{Event}] user was null.");
                                     break;
                                 }
-                                
-                                Console.WriteLine($"[event] incoming message from user {user.FirstName} {user.LastName} ({user.Domain})");
+
+                                Logger.Trace($"[{Event}] incoming message from user {user.FirstName} {user.LastName} ({user.Domain})");
                                 OnNewMessage?.Invoke(message, user);
                                 break;
                             }
@@ -98,7 +115,7 @@ namespace KustarovBot
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"{nameof(EventProcessingWorker)} crashed:\n{ex}");
+                Logger.Error($"[{Event}] {nameof(EventProcessingWorker)} crashed:\n{ex}");
                 throw;
             }
         }

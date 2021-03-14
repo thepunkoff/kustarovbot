@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -7,6 +8,9 @@ namespace KustarovBotTelegramUI.Commands
 {
     public class SetTargetCommand : ICommand
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string SetTarget = "settarget";
+
         private readonly TelegramBotClient _botClient;
         private readonly ChatId _chatId;
         private readonly string _uriString;
@@ -24,7 +28,7 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Console.WriteLine($"running '{DebugName}' command");
+            Logger.Trace($"[{SetTarget}] running '{DebugName}' command");
             TelegramKustarovBotUI.Target = new Uri(_uriString);
             await _botClient.SendTextMessageAsync(_chatId, $"Консоль теперь направлена на бота по адресу '{_uriString}'");
         }

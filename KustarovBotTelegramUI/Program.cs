@@ -1,10 +1,14 @@
 ﻿using System;
 using System.Threading.Tasks;
+using NLog;
 
 namespace KustarovBotTelegramUI
 {
     public static class Program
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string Application = "application";
+
         private static async Task Main()
         {
             try
@@ -14,7 +18,7 @@ namespace KustarovBotTelegramUI
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Unhandled exception: {ex}");
+                Logger.Trace($"[{Application}] unhandled exception:\n{ex}");
             }
         }
     }

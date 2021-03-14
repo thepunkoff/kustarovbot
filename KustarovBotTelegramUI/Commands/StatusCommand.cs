@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
@@ -9,6 +10,9 @@ namespace KustarovBotTelegramUI.Commands
 {
     public class StatusCommand : ICommand
     {
+        private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+        private const string Status = "status";
+
         private readonly TelegramBotClient _botClient;
         private readonly ChatId _chatId;
 
@@ -23,12 +27,12 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Console.WriteLine($"running '{DebugName}' command");
+            Logger.Trace($"[{Status}] running '{DebugName}' command");
             
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += "status";
 
-            Console.WriteLine($"sending request to {ub}");
+            Logger.Trace($"[{Status}] sending request to {ub}");
             var request = WebRequest.Create(ub.ToString());
             request.Method = "GET";
 
@@ -37,7 +41,7 @@ namespace KustarovBotTelegramUI.Commands
                 using var response = await request.GetResponseAsync();
                 var httpResponse = (HttpWebResponse) response;
                 await using var responseStream = response.GetResponseStream();
-                Console.WriteLine($"bot returned status '{httpResponse.StatusCode}'");
+                Logger.Trace($"[{Status}] bot returned status '{httpResponse.StatusCode}'");
                 if (httpResponse.StatusCode == HttpStatusCode.OK)
                 {
                     var streamReader = new StreamReader(responseStream);
@@ -47,7 +51,7 @@ namespace KustarovBotTelegramUI.Commands
             }
             catch (WebException wex)
             {
-                Console.WriteLine(wex.ToString());
+                Logger.Warn($"[{Status}] web exception occured\n" + wex);
                 if (wex.Message.Contains("refused"))
                     await _botClient.SendTextMessageAsync(_chatId, "Статус: 'timeout'");
                 else
