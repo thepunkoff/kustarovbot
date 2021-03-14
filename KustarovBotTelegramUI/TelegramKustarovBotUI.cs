@@ -26,7 +26,7 @@ namespace KustarovBotTelegramUI
         
         public async Task Run()
         {
-            Logger.Trace($"[{Event}] initializing KustarovBotTelegramUi v {Assembly.GetExecutingAssembly().GetName().Version}");
+            Logger.Info($"[{Event}] initializing KustarovBotTelegramUi v {Assembly.GetExecutingAssembly().GetName().Version}");
             var token = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "token.txt"));
             _botClient = new TelegramBotClient(token);
             _commandParser = new CommandParser(_botClient);
@@ -84,6 +84,7 @@ namespace KustarovBotTelegramUI
             
             _botClient.StartReceiving();
 
+            Logger.Info($"[{Event}] KustarovBotTelegramUi started.");
             Thread.Sleep(Timeout.Infinite);
         }
     }

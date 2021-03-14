@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using KustarovBot.Http;
 using KustarovBot.Modules;
 using NLog;
+using NLog.Config;
+using NLog.Targets;
 using VkNet;
 using VkNet.Categories;
 using VkNet.Enums.Filters;
@@ -30,6 +32,8 @@ namespace KustarovBot
         {
             try
             {
+                Bootstrap();
+                
                 Logger.Info($"[{Start}] initializing KustarovBot v {Assembly.GetExecutingAssembly().GetName().Version}");
                 await Authorize();
                 AddMessageProcessors();
@@ -65,6 +69,28 @@ namespace KustarovBot
                 await HttpServer.DisposeAsync();
                 VkApi.Dispose();
             }
+        }
+
+        private static void Bootstrap()
+        {
+            var config = new LoggingConfiguration();
+            var consoleTarget = new ColoredConsoleTarget()
+            {
+                Name = "console",
+                Layout = "${time} ${pad:padding=5:inner=${level:uppercase=true}} ${pad:padding=6:fixedLength=true:${activityid}} ${message}",
+            };
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule { Condition = "level == LogLevel.Trace", ForegroundColor = ConsoleOutputColor.Gray });
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule { Condition = "level == LogLevel.Debug", ForegroundColor = ConsoleOutputColor.White });
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule { Condition = "level == LogLevel.Info", ForegroundColor = ConsoleOutputColor.Green });
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule { Condition = "level == LogLevel.Warn", ForegroundColor = ConsoleOutputColor.Yellow });
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule { Condition = "level == LogLevel.Error", ForegroundColor = ConsoleOutputColor.Red });
+            consoleTarget.RowHighlightingRules.Add(new ConsoleRowHighlightingRule { Condition = "level == LogLevel.Fatal", ForegroundColor = ConsoleOutputColor.DarkRed });
+
+            config.AddRule(LogLevel.Debug, LogLevel.Fatal, consoleTarget, "*");
+            foreach (var rule in config.LoggingRules)
+                rule.EnableLoggingForLevel(LogLevel.Trace);
+
+            LogManager.Configuration = config;
         }
 
         private static async Task Authorize()
