@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using KustarovBot.Shared;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
@@ -11,24 +12,27 @@ namespace KustarovBotTelegramUI
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private const string Application = "application";
 
+        private static readonly MailService MailService = new();
+
         private static async Task Main()
         {
             try
             {
                 Bootstrap();
-                var ui = new TelegramKustarovBotUI();
+                var ui = new TelegramKustarovBotUI(MailService);
                 await ui.Run();
             }
             catch (Exception ex)
             {
                 Logger.Trace($"[{Application}] unhandled exception:\n{ex}");
+                await MailService.SendException(ex);
             }
         }
 
         private static void Bootstrap()
         {
             var config = new LoggingConfiguration();
-            var consoleTarget = new ColoredConsoleTarget()
+            var consoleTarget = new ColoredConsoleTarget
             {
                 Name = "console",
                 Layout = "${time} ${pad:padding=5:inner=${level:uppercase=true}} ${pad:padding=6:fixedLength=true:${activityid}} ${message}",

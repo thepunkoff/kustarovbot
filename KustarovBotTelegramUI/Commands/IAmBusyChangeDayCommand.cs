@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using KustarovBotTelegramUI.State;
 using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace KustarovBotTelegramUI.Commands
 {
+    // ReSharper disable once InconsistentNaming
     public class IAmBusyChangeDayCommand : ICommand
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -31,7 +31,6 @@ namespace KustarovBotTelegramUI.Commands
         
         public async Task Run()
         {
-            Logger.Trace($"[{ChangeDay}] running '{DebugName}' command");
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += "iambusy/changeSchedule";
             ub.Query += $"?{_day}={_value}";
@@ -40,7 +39,6 @@ namespace KustarovBotTelegramUI.Commands
             var request = WebRequest.CreateHttp(ub.ToString());
             request.Method = "GET";
 
-            WebResponse response = null;
             try
             {
                 var webResponse = await request.GetResponseAsync();
@@ -52,8 +50,12 @@ namespace KustarovBotTelegramUI.Commands
             catch (WebException wex)
             {
                 var errorResponse = (HttpWebResponse) wex.Response;
-                Logger.Trace($"[{ChangeDay}] bot returned status code '{errorResponse.StatusCode}'");
+                if (errorResponse is null)
+                    Logger.Error($"[{ChangeDay}] {nameof(errorResponse)} was null");
+                else
+                    Logger.Trace($"[{ChangeDay}] bot returned status code '{errorResponse.StatusCode}'");
                 await _botClient.SendTextMessageAsync(_chatId, "Произошла ошибка.");
+                throw;
             }
         }
     }

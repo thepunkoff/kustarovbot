@@ -150,7 +150,6 @@ namespace KustarovBot.Http
             catch (Exception ex)
             {
                 Logger.Error($"[{Http}] {nameof(ServerWorker)} crashed:\n{ex}");
-                throw;
             }
         }
 

@@ -31,4 +31,8 @@
       </None>
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\KustarovBot.Shared\KustarovBot.Shared.csproj" />
+    </ItemGroup>
+
 </Project>

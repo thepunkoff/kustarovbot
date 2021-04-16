@@ -30,9 +30,10 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Logger.Trace($"[{SendMessage}] running '{DebugName}' command");
-            
-            if (_orginalMessageId != 0)
+            var edit = _orginalMessageId != 0;
+            Logger.Trace($"[{SendMessage}] {(edit ? "editing" : "sending")} message");
+
+            if (edit)
                 await _botClient.EditMessageTextAsync(_chatId, _orginalMessageId, _text);    
             else
                 await _botClient.SendTextMessageAsync(_chatId, _text);

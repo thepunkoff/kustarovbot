@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using KustarovBot.Http;
 using KustarovBot.Modules;
+using KustarovBot.Shared;
 using NLog;
 using NLog.Config;
 using NLog.Targets;
 using VkNet;
-using VkNet.Categories;
 using VkNet.Enums.Filters;
 using VkNet.Model;
 
@@ -24,8 +23,9 @@ namespace KustarovBot
 
         private static readonly VkApi VkApi = new();
         private static readonly List<IModule> MessageProcessors = new();
-        private static EventProcessor _eventProcessor;
         private static readonly HttpServer HttpServer = new(8080);
+        private static readonly MailService MailService = new();
+        private static EventProcessor _eventProcessor;
         private static User _self;
 
         private static async Task Main()
@@ -51,6 +51,7 @@ namespace KustarovBot
                     catch (Exception ex)
                     {
                         Logger.Error($"[{Start}] unexpected error occured while processing message:\n{ex}");
+                        await MailService.SendException(ex);
                     }
                 };
                 _eventProcessor.StartProcessingEvents();
@@ -62,11 +63,16 @@ namespace KustarovBot
             catch (Exception ex)
             {
                 Logger.Error($"[{Start}] unhandled exception:\n{ex}");
+                await MailService.SendException(ex);
             }
             finally
             {
-                await _eventProcessor.DisposeAsync();
-                await HttpServer.DisposeAsync();
+                if (_eventProcessor is not null)
+                    await _eventProcessor.DisposeAsync();
+
+                if (HttpServer is not null)
+                    await HttpServer.DisposeAsync();
+
                 VkApi.Dispose();
             }
         }
@@ -74,7 +80,7 @@ namespace KustarovBot
         private static void Bootstrap()
         {
             var config = new LoggingConfiguration();
-            var consoleTarget = new ColoredConsoleTarget()
+            var consoleTarget = new ColoredConsoleTarget
             {
                 Name = "console",
                 Layout = "${time} ${pad:padding=5:inner=${level:uppercase=true}} ${pad:padding=6:fixedLength=true:${activityid}} ${message}",
@@ -97,7 +103,7 @@ namespace KustarovBot
         {
             await VkApi.AuthorizeAsync(new ApiAuthParams
             {
-                AccessToken = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "token.txt")),
+                AccessToken = await Configuration.GetValue("token"),
                 Settings = Settings.All | Settings.Offline,
             });
 

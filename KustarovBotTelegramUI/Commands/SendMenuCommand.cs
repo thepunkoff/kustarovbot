@@ -1,14 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Versioning;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using KustarovBotTelegramUI.Extensions;
-using KustarovBotTelegramUI.Menus;
 using NLog;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 
 namespace KustarovBotTelegramUI.Commands
 {
@@ -21,7 +15,6 @@ namespace KustarovBotTelegramUI.Commands
         private readonly TelegramBotClient _botClient;
         private readonly string _menuId;
         private readonly int _originalMessageId;
-        private readonly bool _edit;
         public string DebugName { get; }
 
         public SendMenuCommand(TelegramBotClient botClient, ChatId chatId, string menuId, int originalMessageId = 0)
@@ -36,10 +29,11 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Logger.Trace($"[{SendMenu}] running '{DebugName}' command");
             var menu = Resources.GetMenu(_menuId);
             var markup = menu.Rows.MakeMarkup();
             
+            Logger.Trace($"[{SendMenu}] sending {_menuId}");
+
             if (_originalMessageId != 0)
                 await _botClient.EditMessageTextAsync(_chatId, _originalMessageId, menu.Text, replyMarkup: markup);
             else

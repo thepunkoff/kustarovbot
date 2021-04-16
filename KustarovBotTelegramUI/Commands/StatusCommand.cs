@@ -27,8 +27,6 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Logger.Trace($"[{Status}] running '{DebugName}' command");
-            
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += "status";
 
@@ -51,7 +49,7 @@ namespace KustarovBotTelegramUI.Commands
             }
             catch (WebException wex)
             {
-                Logger.Warn($"[{Status}] web exception occured\n" + wex);
+                Logger.Error($"[{Status}] web exception occured\n" + wex);
                 if (wex.Message.Contains("refused"))
                     await _botClient.SendTextMessageAsync(_chatId, "Статус: 'timeout'");
                 else

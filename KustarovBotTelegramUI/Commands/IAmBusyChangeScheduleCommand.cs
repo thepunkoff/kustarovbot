@@ -27,7 +27,6 @@ namespace KustarovBotTelegramUI.Commands
         
         public async Task Run()
         {
-            Logger.Trace($"[{ChangeSchedule}] running '{DebugName}' command");
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += "iambusy/changeSchedule";
             ub.Query += $"?monday={_newSchedule.Monday}";
@@ -42,7 +41,6 @@ namespace KustarovBotTelegramUI.Commands
             var request = WebRequest.CreateHttp(ub.ToString());
             request.Method = "GET";
 
-            WebResponse response = null;
             try
             {
                 var webResponse = await request.GetResponseAsync();
@@ -54,8 +52,12 @@ namespace KustarovBotTelegramUI.Commands
             catch (WebException wex)
             {
                 var errorResponse = (HttpWebResponse) wex.Response;
-                Logger.Trace($"[{ChangeSchedule}] bot returned status code '{errorResponse.StatusCode}'");
+                if (errorResponse is null)
+                    Logger.Error($"[{ChangeSchedule}] {nameof(errorResponse)} was null");
+                else
+                    Logger.Trace($"[{ChangeSchedule}] bot returned status code '{errorResponse.StatusCode}'");
                 await _botClient.SendTextMessageAsync(_chatId, "Произошла ошибка.");
+                throw;
             }
         }
     }

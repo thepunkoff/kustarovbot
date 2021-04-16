@@ -8,6 +8,7 @@ using Telegram.Bot.Types;
 
 namespace KustarovBotTelegramUI.Commands
 {
+    // ReSharper disable once InconsistentNaming
     public class IAmBusyChangeTextCommand : ICommand
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -29,7 +30,6 @@ namespace KustarovBotTelegramUI.Commands
         
         public async Task Run()
         {
-            Logger.Trace($"[{IAmBusyChangeText}] running '{DebugName}' command");
             var ub = new UriBuilder(TelegramKustarovBotUI.Target);
             ub.Path += $"iambusy/changeText";
             ub.Query = $"text={_text}";
@@ -38,7 +38,6 @@ namespace KustarovBotTelegramUI.Commands
             var request = WebRequest.CreateHttp(ub.ToString());
             request.Method = "GET";
 
-            WebResponse response = null;
             try
             {
                 var webResponse = await request.GetResponseAsync();
@@ -50,8 +49,13 @@ namespace KustarovBotTelegramUI.Commands
             catch (WebException wex)
             {
                 var errorResponse = (HttpWebResponse) wex.Response;
-                Logger.Trace($"[{IAmBusyChangeText}] bot returned status code '{errorResponse.StatusCode}'");
+                if (errorResponse is null)
+                    Logger.Error($"[{IAmBusyChangeText}] {nameof(errorResponse)} was null");
+                else
+                    Logger.Trace($"[{IAmBusyChangeText}] bot returned status code '{errorResponse.StatusCode}'");
+
                 await _botClient.SendTextMessageAsync(_chatId, "Произошла ошибка.");
+                throw;
             }
         }
     }

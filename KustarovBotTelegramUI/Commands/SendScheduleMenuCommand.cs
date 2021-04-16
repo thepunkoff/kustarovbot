@@ -27,11 +27,14 @@ namespace KustarovBotTelegramUI.Commands
         
         public async Task Run()
         {
-            Logger.Trace($"[{SendScheduleMenu}] running '{DebugName}' command");
             var menu = await Menu.CreateActualScheduleMenu();
             var markup = menu.Rows.MakeMarkup();
+
+            var edit = _originalMessageId != 0;
             
-            if (_originalMessageId != 0)
+            Logger.Trace($"[{SendScheduleMenu}] {(edit ? "editing" : "sending")} schedule menu");
+            
+            if (edit)
                 await _botClient.EditMessageTextAsync(_chatId, _originalMessageId, menu.Text, replyMarkup: markup);
             else
                 await _botClient.SendTextMessageAsync(_chatId, menu.Text, replyMarkup: markup);

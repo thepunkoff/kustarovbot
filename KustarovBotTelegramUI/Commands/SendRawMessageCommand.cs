@@ -26,7 +26,7 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Logger.Trace($"[{SendRawMessage}] running '{DebugName}' command");
+            Logger.Trace($"[{SendRawMessage}] sending raw message");
             await _botClient.SendTextMessageAsync(_chatId, _text);
         }
     }

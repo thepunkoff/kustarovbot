@@ -19,7 +19,8 @@ namespace KustarovBotTelegramUI.Commands
         
         public Task Run()
         {
-            Logger.Trace($"[{StartProcedure}] running '{DebugName}' command");
+            Logger.Trace($"[{StartProcedure}] starting {_procedure} procedure");
+
             TelegramKustarovBotUI.ActiveProcedure = _procedure;
             return Task.CompletedTask;
         }

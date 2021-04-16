@@ -28,7 +28,7 @@ namespace KustarovBotTelegramUI.Commands
 
         public async Task Run()
         {
-            Logger.Trace($"[{SetTarget}] running '{DebugName}' command");
+            Logger.Trace($"[{SetTarget}] setting target to be {_uriString}");
             TelegramKustarovBotUI.Target = new Uri(_uriString);
             await _botClient.SendTextMessageAsync(_chatId, $"Консоль теперь направлена на бота по адресу '{_uriString}'");
         }

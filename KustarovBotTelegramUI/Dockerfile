@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/aspnet:5.0
-COPY bin/Release/net5.0/publish/ App/
+FROM mcr.microsoft.com/dotnet/runtime:5.0
+COPY ../build/KustarovBotTelegramUI App/
 WORKDIR /App
 ENTRYPOINT ["dotnet", "KustarovBotTelegramUI.dll"]

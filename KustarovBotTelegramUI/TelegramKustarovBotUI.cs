@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using KustarovBot.Shared;
 using KustarovBotTelegramUI.Commands;
 using NLog;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using File = System.IO.File;
 
 namespace KustarovBotTelegramUI
@@ -23,6 +22,12 @@ namespace KustarovBotTelegramUI
         public static Uri Target = new("http://localhost:8080");
         public static ProcedureCode ActiveProcedure = ProcedureCode.NoProcedure;
         private readonly List<int> _permittedUsers = new List<int> {583334704, 265677946};
+        private readonly MailService _mailService;
+
+        public TelegramKustarovBotUI(MailService mailService)
+        {
+            _mailService = mailService;
+        }
         
         public async Task Run()
         {
@@ -55,12 +60,14 @@ namespace KustarovBotTelegramUI
                         command = _commandParser.ParseCommand(args.Message.Chat.Id, args.Message.Text);
                     }
 
+                    Logger.Trace($"Running {command.DebugName} command");
                     await command.Run();
                 }
                 catch (Exception ex)
                 {
                     Logger.Error($"[{Event}] unexpected error occured while processing user message:\n{ex}");
                     await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Произошла ошибка.").Run();
+                    await _mailService.SendException(ex);
                 }
             };
             
@@ -68,7 +75,7 @@ namespace KustarovBotTelegramUI
             {
                 try
                 {
-                    Logger.Trace($"[{Event}] callback query recieved");
+                    Logger.Trace($"[{Event}] callback query recieved:\n{args.CallbackQuery.From.FirstName} {args.CallbackQuery.From.LastName}: '{args.CallbackQuery.Data}'");
                     foreach (var rawCommand in args.CallbackQuery.Data.Split(';'))
                     {
                         var command = _commandParser.ParseCommand(args.CallbackQuery.Message.Chat.Id, rawCommand, args.CallbackQuery.Message.MessageId);
@@ -79,6 +86,7 @@ namespace KustarovBotTelegramUI
                 {
                     Logger.Error($"[{Event}] unexpected error occured while processing user message:\n{ex}");
                     await new SendRawMessageCommand(_botClient, args.CallbackQuery.Message.Chat.Id, "Произошла ошибка.").Run();
+                    await _mailService.SendException(ex);
                 }
             };
             
