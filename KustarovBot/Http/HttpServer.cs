@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -48,7 +49,13 @@ namespace KustarovBot.Http
                         continue;
                     }
 
-                    // ToDo: Вынести 
+                    if (request.Url is null)
+                    {
+                        Logger.Warn($"[{Http}] incoming request url was null.");
+                        continue;
+                    }
+
+                    // ToDo: Вынести.
                     switch (request.Url.AbsolutePath)
                     {
                         case "/status":
@@ -66,15 +73,15 @@ namespace KustarovBot.Http
                             Logger.Trace($"[{Http}] got changeText request from {request.RemoteEndPoint}");
                             
                             var queryString = request.QueryString;
-                            if (queryString.Keys.Count == 0 || queryString.Keys.Count > 1)
+                            if (queryString.Keys.Count is 0 or > 1)
                             {
-                                await ReturnBadRequest(context.Response);
+                                await ReturnBadRequest(context.Response, "Query string should contain only one key 'text'.");
                                 continue;
                             }
 
                             if (queryString.Keys[0] != "text")
                             {
-                                await ReturnBadRequest(context.Response);
+                                await ReturnBadRequest(context.Response, "Query string should contain only one key 'text'.");
                                 continue;
                             }
 
@@ -98,15 +105,36 @@ namespace KustarovBot.Http
                             
                             var state = Resources.LoadState();
                             var queryString = request.QueryString;
-                            state = queryString.AllKeys.Aggregate(state, (current, key) => key switch
+                            if (queryString.Count == 0)
+                                await ReturnBadRequest(context.Response, "Query string didn't contain any keys.");
+
+                            var notNullValueDic = new Dictionary<string, string>();
+                            foreach (var key in queryString.AllKeys)
                             {
-                                "monday" => current with {Monday = bool.Parse(queryString[key])},
-                                "tuesday" => current with {Tuesday = bool.Parse(queryString[key])},
-                                "wednesday" => current with {Wednesday = bool.Parse(queryString[key])},
-                                "thursday" => current with {Thursday = bool.Parse(queryString[key])},
-                                "friday" => current with {Friday = bool.Parse(queryString[key])},
-                                "saturday" => current with {Saturday = bool.Parse(queryString[key])},
-                                "sunday" => current with {Sunday = bool.Parse(queryString[key])},
+                                if (key is null)
+                                {
+                                    Logger.Warn($"[{Http}] found a null key in query string.");
+                                    continue;
+                                }
+
+                                if (queryString[key] is null)
+                                {
+                                    Logger.Warn($"[{Http}] query string value for key '{key}' was null.");
+                                    continue;
+                                }
+
+                                notNullValueDic.Add(key, queryString[key]);
+                            }
+
+                            state = notNullValueDic.Keys.Aggregate(state, (current, key) => key switch
+                            {
+                                "monday" => current with { Monday = bool.Parse(notNullValueDic[key]) },
+                                "tuesday" => current with { Tuesday = bool.Parse(notNullValueDic[key]) },
+                                "wednesday" => current with { Wednesday = bool.Parse(notNullValueDic[key]) },
+                                "thursday" => current with { Thursday = bool.Parse(notNullValueDic[key]) },
+                                "friday" => current with { Friday = bool.Parse(notNullValueDic[key]) },
+                                "saturday" => current with { Saturday = bool.Parse(notNullValueDic[key]) },
+                                "sunday" => current with { Sunday = bool.Parse(notNullValueDic[key]) },
                                 _ => current
                             });
 
@@ -153,10 +181,10 @@ namespace KustarovBot.Http
             }
         }
 
-        private static async Task ReturnBadRequest(HttpListenerResponse response)
+        private static async Task ReturnBadRequest(HttpListenerResponse response, string message = "404 bad request")
         {
             response.StatusCode = 400;
-            await response.WriteString("400 bad request");
+            await response.WriteString(message);
             response.OutputStream.Close();
             response.Close();
         }
