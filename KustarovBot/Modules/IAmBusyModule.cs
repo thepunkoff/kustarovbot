@@ -11,7 +11,6 @@ using VkNet.Enums.Filters;
 using VkNet.Exception;
 using VkNet.Model;
 using VkNet.Model.RequestParams;
-using VkNet.Utils;
 
 namespace KustarovBot.Modules
 {
@@ -45,7 +44,7 @@ namespace KustarovBot.Modules
 
             Logger.Info($"[{IAmBusy}] filtering by ignore list '{state.BotIgnoreListName}' is on.");
 
-            _ignoredUserIds = _vkApi.Friends.Get(new FriendsGetParams()
+            _ignoredUserIds = _vkApi.Friends.Get(new FriendsGetParams
             {
                 ListId = ignoreList.Id,
                 Fields = ProfileFields.Uid
