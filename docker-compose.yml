@@ -1,0 +1,22 @@
+version: '3.9'
+
+networks:
+  bot_net:
+    name: bot_net
+
+services:
+  bot:
+    container_name: bot
+    restart: always
+    image: thepunkoff/kustarovbot:latest
+    networks:
+      - bot_net
+    volumes:
+      - ./KustarovBot/Configuration:/App/Configuration
+
+  ui:
+    container_name: ui
+    restart: always
+    image: thepunkoff/kustarovbot-telegramui:latest
+    networks:
+      - bot_net
