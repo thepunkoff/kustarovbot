@@ -9,7 +9,7 @@ namespace KustarovBot
     public static class Resources
     {
         private static readonly string ExecutionPath = AppDomain.CurrentDomain.BaseDirectory;
-        private static readonly string StatePath = Path.Combine(ExecutionPath, "Data", "State", $"state.yml");
+        private static readonly string StatePath = Path.Combine(ExecutionPath, "Data", "State", "state.yml");
         
         public static BotState LoadState()
         {
