@@ -103,7 +103,7 @@ namespace KustarovBotTelegramUI.Menus
                             new Button()
                             {
                                 Text = "Вс" + $" ({Emoji(schedule.Sunday)})",
-                                Commands = new List<string>{$"/changeDay sunday {!schedule.Monday}"}
+                                Commands = new List<string>{$"/changeDay sunday {!schedule.Sunday}"}
                             },
                         },
                     },
