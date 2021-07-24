@@ -70,7 +70,7 @@ namespace KustarovBotTelegramUI
                 catch (Exception ex)
                 {
                     Logger.Error($"[{Event}] unexpected error occured while processing user message:\n{ex}");
-                    await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Произошла ошибка.").Run();
+                    await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, $"Произошла ошибка: {ex.Message}").Run();
                     await _mailService.SendException(ex);
                 }
             };
@@ -89,7 +89,7 @@ namespace KustarovBotTelegramUI
                 catch (Exception ex)
                 {
                     Logger.Error($"[{Event}] unexpected error occured while processing user message:\n{ex}");
-                    await new SendRawMessageCommand(_botClient, args.CallbackQuery.Message.Chat.Id, "Произошла ошибка.").Run();
+                    await new SendRawMessageCommand(_botClient, args.CallbackQuery.Message.Chat.Id, $"Произошла ошибка: {ex.Message}").Run();
                     await _mailService.SendException(ex);
                 }
             };
