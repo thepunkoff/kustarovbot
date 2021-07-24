@@ -32,7 +32,7 @@ namespace KustarovBotTelegramUI
         public async Task Run()
         {
             Logger.Info($"[{Event}] initializing KustarovBotTelegramUi v {Assembly.GetExecutingAssembly().GetName().Version}");
-            var token = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "token.txt"));
+            var token = await File.ReadAllTextAsync(Path.Combine(Environment.CurrentDirectory, "Configuration", "token.txt"));
             _botClient = new TelegramBotClient(token);
             _commandParser = new CommandParser(_botClient);
 
