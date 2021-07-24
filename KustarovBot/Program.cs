@@ -23,7 +23,7 @@ namespace KustarovBot
 
         private static readonly VkApi VkApi = new();
         private static readonly List<IModule> MessageProcessors = new();
-        private static readonly HttpServer HttpServer = new(8080);
+        private static readonly HttpServer HttpServer = new(80);
         private static readonly MailService MailService = new();
         private static EventProcessor _eventProcessor;
         private static User _self;
