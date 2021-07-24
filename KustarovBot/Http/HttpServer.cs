@@ -65,7 +65,8 @@ namespace KustarovBot.Http
                             response.StatusCode = 200;
                             await response.WriteString("ok");
                             response.OutputStream.Close();
-                            Logger.Trace($"[{Http}] responded ok");
+
+                            Logger.Trace($"[{Http}] responded ok.");
                             break;
                         }
                         case "/iambusy/changeText":
@@ -76,28 +77,28 @@ namespace KustarovBot.Http
                             if (queryString.Keys.Count is 0 or > 1)
                             {
                                 await ReturnBadRequest(context.Response, "Query string should contain only one key 'text'.");
-                                continue;
+                                break;
                             }
 
                             if (queryString.Keys[0] != "text")
                             {
                                 await ReturnBadRequest(context.Response, "Query string should contain only one key 'text'.");
-                                continue;
+                                break;
                             }
 
                             var value = queryString.GetValues(0)?[0];
                             if (string.IsNullOrWhiteSpace(value))
                             {
                                 await ReturnBadRequest(context.Response);
-                                continue;
+                                break;
                             }
 
                             context.Response.StatusCode = 200;
                             await Resources.SaveState(Resources.LoadState() with {ReplyText = value});
-                            Logger.Trace($"[{Http}] changed iambusy module response text to '{value}'");
                             context.Response.Close();
 
-                            continue;
+                            Logger.Trace($"[{Http}] changed iambusy module response text to '{value}'");
+                            break;
                         }
                         case "/iambusy/changeSchedule":
                         {
@@ -114,13 +115,13 @@ namespace KustarovBot.Http
                                 if (key is null)
                                 {
                                     Logger.Warn($"[{Http}] found a null key in query string.");
-                                    continue;
+                                    break;
                                 }
 
                                 if (queryString[key] is null)
                                 {
                                     Logger.Warn($"[{Http}] query string value for key '{key}' was null.");
-                                    continue;
+                                    break;
                                 }
 
                                 notNullValueDic.Add(key, queryString[key]);
@@ -139,11 +140,11 @@ namespace KustarovBot.Http
                             });
 
                             await Resources.SaveState(state);
-                            Logger.Trace($"[{Http}] saved new state.");
                             context.Response.StatusCode = 200;
                             context.Response.Close();
                             
-                            continue;
+                            Logger.Trace($"[{Http}] Changed schedule. Saved new state.");
+                            break;
                         }
                         case "/iambusy/getSchedule":
                         {
@@ -163,14 +164,15 @@ namespace KustarovBot.Http
                                                        "}");
                             response.OutputStream.Close();
                             response.Close();
-
-                            continue;
+                            
+                            Logger.Trace($"[{Http}] Sent current schedule.");
+                            break;;
                         }
                         default:
                         {
                             Logger.Trace($"[{Http}] raw url was '{request.RawUrl}'. responding 400 bad request.");
                             await ReturnBadRequest(context.Response);
-                            continue;
+                            break;
                         }
                     }
                 }
@@ -191,11 +193,11 @@ namespace KustarovBot.Http
 
         public async ValueTask DisposeAsync()
         {
-            await _serverWorker;
             _cts.Cancel();
-            _cts.Dispose();
-            _httpListener.Stop();
+            await _serverWorker;
+            _httpListener?.Stop();
             Logger.Trace($"[{Http}] stopped http server on port 8080.");
+            _cts.Dispose();
         }
     }
 }
