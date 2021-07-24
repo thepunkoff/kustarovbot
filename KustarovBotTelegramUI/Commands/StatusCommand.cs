@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using NLog;
 using Telegram.Bot;
@@ -33,7 +35,7 @@ namespace KustarovBotTelegramUI.Commands
             Logger.Trace($"[{Status}] sending request to {ub}");
             var request = WebRequest.Create(ub.ToString());
             request.Method = "GET";
-
+            
             try
             {
                 using var response = await request.GetResponseAsync();
@@ -50,11 +52,20 @@ namespace KustarovBotTelegramUI.Commands
             catch (WebException wex)
             {
                 Logger.Error($"[{Status}] web exception occured\n" + wex);
-                if (wex.Message.Contains("refused"))
-                    await _botClient.SendTextMessageAsync(_chatId, "Статус: 'timeout'");
-                else
-                    await _botClient.SendTextMessageAsync(_chatId, "Статус: 'not ok'");
+                var status = GetStatusCode(wex);
+                await _botClient.SendTextMessageAsync(_chatId, $"[{status}] {wex.Message}");
             }
+        }
+        
+        private static string GetStatusCode(Exception ex)
+        {
+            return ex switch
+            {
+                WebException wex when wex.Status != WebExceptionStatus.UnknownError => wex.Status.ToString(),
+                HttpRequestException { StatusCode: { } } hex => hex.StatusCode.ToString(),
+                SocketException sex => sex.SocketErrorCode.ToString(),
+                _ => ex.InnerException is not null ? GetStatusCode(ex.InnerException) : "UnknownError"
+            };
         }
     }
 }
