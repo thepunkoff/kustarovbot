@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,14 +20,18 @@ namespace KustarovBotTelegramUI
 
         private TelegramBotClient _botClient;
         private CommandParser _commandParser;
-        public static Uri Target = new("http://localhost:8080");
+        public static Uri Target;
         public static ProcedureCode ActiveProcedure = ProcedureCode.NoProcedure;
-        private readonly List<int> _permittedUsers = new List<int> {583334704, 265677946};
+        private readonly List<int> _permittedUsers = new();
         private readonly MailService _mailService;
 
         public TelegramKustarovBotUI(MailService mailService)
         {
             _mailService = mailService;
+            Target = new Uri(Configuration.GetValue("botAddress").GetAwaiter().GetResult()); 
+            var permittedUsers = Configuration.GetValues("permittedUsers").GetAwaiter().GetResult()
+                .Select(int.Parse);
+            _permittedUsers.AddRange(permittedUsers);
         }
         
         public async Task Run()
@@ -40,7 +45,6 @@ namespace KustarovBotTelegramUI
             {
                 try
                 {
-                    // ToDo: use "permittedUsers" file
                     if (!_permittedUsers.Contains(args.Message.From.Id))
                     {
                         await new SendRawMessageCommand(_botClient, args.Message.Chat.Id, "Нет доступа.").Run();
