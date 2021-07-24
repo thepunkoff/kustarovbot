@@ -87,16 +87,19 @@ namespace KustarovBot
                                     break;
                                 }
 
+                                if (message.PeerId > 2000000000)
+                                {
+                                    Logger.Trace($"[{Event}] ignoring group chat message.");
+                                    break;
+                                }
+
                                 // Игнорируем свои сообщения кому-либо
-                                // Todo: понять, как игнорировать сообщения бота
+                                // Todo: понять, как игнорировать сообщения, отправленные ботом автоматически
                                 if (message.FromId == _self.Id && message.FromId != message.PeerId)
                                 {
                                     Logger.Debug($"[{Event}] ignoring bot message.");
                                     break;
                                 }
-
-                                if (message.FromId != message.PeerId)
-                                    Logger.Debug($"[{Event}] can't ignore self message yet.");
 
                                 var user = longPollResponse.Profiles.SingleOrDefault(x => x.Id == message.FromId);
                                 if (user is null)
