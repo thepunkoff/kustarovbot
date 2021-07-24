@@ -17,9 +17,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <None Update="token.txt">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="Data\Menus\iambusy.yml">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
@@ -27,6 +24,9 @@
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
       <None Update="Data\State\state.yml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+      <None Update="Configuration\token.txt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
     </ItemGroup>
